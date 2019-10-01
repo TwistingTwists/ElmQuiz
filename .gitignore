@@ -4,7 +4,7 @@ elm-stuff
 repl-temp-*
 .cache
 
-dist
+
 
 src/Central.elm
 src/elmUIexample.elm
