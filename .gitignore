@@ -2,3 +2,16 @@
 elm-stuff
 # elm-repl generated files
 repl-temp-*
+.cache
+
+dist
+
+src/Central.elm
+src/elmUIexample.elm
+src/exampleinput.elm
+src/quizzy.json
+src/test.elm
+
+elm.js
+elm.min.js
+
