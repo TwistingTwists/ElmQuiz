@@ -15,19 +15,6 @@ import List.Extra as List
 
 
 
--- DEFAULTS
-
-
-defaultQuiz =
-    QuizQuestion "Question Default" [ "(A)", " (B)", " (C)", " (D)" ] "A is DefaultCorrect" "User says A" 0
-        |> List.singleton
-
-
-defaultModel =
-    { jsonPath = "", quiz = defaultQuiz, userScore = 0.0 }
-
-
-
 {-
    input_quiz =
        D.decodeString quizListDecoder input_string
@@ -40,8 +27,28 @@ defaultModel =
 -}
 
 
+yellow =
+    Element.rgb255 255 247 25
+
+
 grey =
     Element.rgb255 232 232 232
+
+
+black =
+    Element.rgb255 0 0 0
+
+
+lightgreen =
+    Element.rgb255 30 255 43
+
+
+purple =
+    Element.rgb255 180 22 255
+
+
+blue =
+    Element.rgb255 72 114 255
 
 
 red =
@@ -98,6 +105,7 @@ type alias Model =
     { jsonPath : String
     , quiz : List QuizQuestion
     , userScore : Float
+    , pageNum : Int
     }
 
 
@@ -112,9 +120,22 @@ type alias QuizQuestion =
     }
 
 
-init : Maybe Model -> ( Model, Cmd Msg )
-init maybeModel =
-    ( Maybe.withDefault defaultModel maybeModel, getJsonFile )
+init : () -> ( Model, Cmd Msg )
+init _ =
+    ( defaultModel, getJsonFile )
+
+
+
+-- DEFAULTS
+
+
+defaultQuiz =
+    QuizQuestion "Question Default" [ "(A)", " (B)", " (C)", " (D)" ] "A is DefaultCorrect" "User says A" 0
+        |> List.singleton
+
+
+defaultModel =
+    { jsonPath = "", quiz = defaultQuiz, userScore = 0.0, pageNum = 1 }
 
 
 
@@ -124,6 +145,7 @@ init maybeModel =
 type Msg
     = ReceivedJson (Result Http.Error (List QuizQuestion)) -- if you received json from server
     | UpdateUserChoice Int String
+    | LoadMore Int
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -143,6 +165,9 @@ update msg model =
             ( model |> updUserChoice id ans |> updUserScore
             , Cmd.none
             )
+
+        LoadMore pgNum ->
+            ( { model | pageNum = pgNum + 1 }, Cmd.none )
 
 
 updUserScore : Model -> Model
@@ -218,6 +243,19 @@ choicesDecoder =
 -- VIEW
 
 
+getUpdatedQuizViewList : Int -> Model -> List QuizQuestion
+getUpdatedQuizViewList pgNum model =
+    let
+        totalPages =
+            (toFloat (List.length model.quiz) / 10)
+                |> ceiling
+
+        ( newQuizList, a ) =
+            List.splitAt (pgNum * 10) model.quiz
+    in
+    newQuizList
+
+
 view : Model -> Html Msg
 view model =
     Element.layout [ padding 50, spacing 100 ]
@@ -231,11 +269,22 @@ view model =
 viewCombine : Model -> Element Msg
 viewCombine model =
     column [ spacing 50 ]
-        [ decodedQuizList model.quiz ]
+        [ model |> getUpdatedQuizViewList model.pageNum |> decodedQuizList, viewButtons model ]
 
 
-
--- , scoreView model ]
+viewButtons : Model -> Element Msg
+viewButtons model =
+    Input.button
+        [ Background.color lightgreen
+        , Font.color black
+        , padding 10
+        , Border.rounded 10
+        , Element.focused
+            [ Background.color blue, Font.color yellow ]
+        ]
+        { onPress = Just <| LoadMore model.pageNum
+        , label = text "More Please"
+        }
 
 
 scoreView : Model -> Element Msg
@@ -273,8 +322,8 @@ countScoreHelper quiz scoreSoFar =
 
 decodedQuizList : List QuizQuestion -> Element Msg
 decodedQuizList modelQuizList =
-    wrappedRow [ width fill, Element.centerX ]
-        [ -- [ text <| Debug.toString modelQuizList
+    wrappedRow [ Element.explain Debug.todo, width fill, Element.centerX ]
+        [ -- text <| Debug.toString modelQuizList
           -- (viewQuizList input_quiz)
           -- (viewQuizList modelQuizList)
           column
@@ -338,78 +387,3 @@ niceViewop choice op =
 
         Selected ->
             el (List.append [ Background.color (Element.rgb255 241 196 15) ] attrs) (text choice)
-
-
-
-{-
-
-
-   viewQuizList : List QuizQuestion -> Element Msg
-   viewQuizList quizList =
-       case quizList of
-           Just listofquiz ->
-               -- viewInputQuiz model (List.head listofquiz)
-               column [] (List.map radioQuiz listofquiz)
-
-           Nothing ->
-               text <| "Could not parse quizlist succesfullly"
-
-
-      viewChoices : QuizQuestion -> Element Msg
-      viewChoices ({ quiz } as model) =
-          Input.radio [ padding 10, spacing 5, Font.size 16 ]
-              { onChange = UpdateUserChoice quiz.qid
-              , selected = Just model.quiz.userResponse
-              , label = Input.labelAbove [] (text model.quiz.question)
-              , options =
-                  List.map2 (\op ch -> Input.option op (text ch)) [ "A", "B", "C", "D" ] quiz.choices
-
-              -- List.map2 (\op ch -> Input.option op (text ch)) [ A, B, C, D ] choices
-              }
-
--}
---- ANOTHER GARBAGE SECTION
--- Input.radio
--- [ spacing 12
--- , Background.color grey
--- ]
--- { selected = Just model.lunch
--- , onChange = \new -> Update { model | lunch = new }
--- , label = Input.labelAbove [ Font.size 14, paddingXY 0 12 ] (text "What would you like for lunch?")
--- , options =
---     [ Input.option Gyro (text "Gyro")
---     , Input.option Burrito (text "Burrito")
---     , Input.option Taco (text "Taco")
---     ]
--- }
--- ( model |> updateUsrResponse id ans, Cmd.none )
--- HELPER FUNCTIONS to update model
--- https://gist.github.com/s-m-i-t-a/2a83c0bc5b7d7081b019d18520ebc62c
-{-
-   setUserResponse : String -> QuizQuestion -> QuizQuestion
-   setUserResponse ans quiz =
-       { quiz | userResponse = ans }
-
-
-   setQuiz : (QuizQuestion -> QuizQuestion) -> Model -> Model
-   setQuiz fnQuiz model =
-       { model | quiz = fnQuiz model.quiz }
-
-
-   updateUsrResponse : Int -> String -> Model -> Model
-   updateUsrResponse id ans =
-       setUserResponse id ans
-           |> setQuiz
-
--}
--- viewInputQuiz : Model -> List QuizQuestion -> Element Msg
--- viewInputQuiz model listofquiz =
---     viewSingleQuestion model (List.head listofquiz)
--- viewSingleQuestion : Model -> QuizQuestion -> Element Msg
--- viewSingleQuestion model inp =
---     radioQuiz model inp
--- case inp of
---     Just a ->
---         radioQuiz model a
---     Nothing ->
---         text <| "Question could not be parsed!"
