@@ -4,8 +4,9 @@ elm-stuff
 repl-temp-*
 .cache
 
-
+node_modules/
 ElmQuizParcelNetlify/
+
 src/Central.elm
 src/elmUIexample.elm
 src/exampleinput.elm
