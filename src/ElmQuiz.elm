@@ -192,9 +192,9 @@ getJsonFile : Cmd Msg
 getJsonFile =
     Http.get
         { --   url = "./AugInsights.json"
-          --  url = "https://gist.githubusercontent.com/TwistingTwists/409437d7fc146d05f313e59da44535e6/raw/8a7179d0fb2fed5c73938ab43cc04fd5ca0eaaa0/AugInsights.json"
-          url = "http://192.168.0.104:8080/src/AugInsights.json"
+          url = "https://gist.githubusercontent.com/TwistingTwists/409437d7fc146d05f313e59da44535e6/raw/8a7179d0fb2fed5c73938ab43cc04fd5ca0eaaa0/AugInsights.json"
 
+        --   url = "http://192.168.0.104:8080/src/AugInsights.json"
         -- , headers = [ Http.header "Access-Control-Allow-Origin: nickname.github.io" ]
         --   url = "http://192.168.0.105:8080/src/quizzy.json"
         , expect = Http.expectJson ReceivedJson quizListDecoder
