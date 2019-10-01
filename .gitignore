@@ -5,7 +5,7 @@ repl-temp-*
 .cache
 
 
-
+ElmQuizParcelNetlify/
 src/Central.elm
 src/elmUIexample.elm
 src/exampleinput.elm
@@ -15,3 +15,6 @@ src/test.elm
 elm.js
 elm.min.js
 
+
+# Local Netlify folder
+.netlify
