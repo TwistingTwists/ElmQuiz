@@ -322,8 +322,9 @@ countScoreHelper quiz scoreSoFar =
 
 decodedQuizList : List QuizQuestion -> Element Msg
 decodedQuizList modelQuizList =
-    wrappedRow [ Element.explain Debug.todo, width fill, Element.centerX ]
-        [ -- text <| Debug.toString modelQuizList
+    wrappedRow [ width fill, Element.centerX ]
+        [ --  Element.explain Debug.todo,
+          -- text <| Debug.toString modelQuizList
           -- (viewQuizList input_quiz)
           -- (viewQuizList modelQuizList)
           column
