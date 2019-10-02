@@ -269,7 +269,7 @@ view model =
 viewCombine : Model -> Element Msg
 viewCombine model =
     column [ spacing 50 ]
-        [ model |> getUpdatedQuizViewList model.pageNum |> decodedQuizList, wrappedRow [ alignRight ] [ viewMorePlease model.pageNum ] ]
+        [ model |> getUpdatedQuizViewList model.pageNum |> decodedQuizList, wrappedRow [ alignRight, spacing 20 ] [ viewMorePlease model.pageNum, scoreView model ] ]
 
 
 viewMorePlease : Int -> Element Msg
@@ -289,7 +289,7 @@ viewMorePlease pageNum =
 
 scoreView : Model -> Element Msg
 scoreView model =
-    Element.el [ Element.above (text (String.fromFloat model.userScore)), alignTop, alignRight, Font.bold, Font.color red ]
+    Element.el [ Element.below (text <| String.slice 0 6 <| String.fromFloat <| model.userScore), alignTop, alignRight, Font.bold, Font.color red ]
         (text <| "Score is ")
 
 
@@ -366,18 +366,18 @@ radioQuiz q =
             , label = Input.labelHidden ("Question" ++ String.fromInt q.qid)
             , options =
                 -- List.map2 (\op ch -> Input.option op (text ch)) [ "A", "B", "C", "D" ] q.choices
-                List.map2 (\op ch -> Input.optionWith op (niceViewop ch)) [ "A", "B", "C", "D" ] q.choices
+                List.map2 (\op ch -> Input.optionWith op (niceViewop { choice = ch, userResponse = q.userResponse, correct = q.correct })) [ "A", "B", "C", "D" ] q.choices
 
             -- List.map2 (\op ch -> Input.option op (text ch)) [ A, B, C, D ] choices
             }
         ]
 
 
-niceViewop : String -> Input.OptionState -> Element Msg
-niceViewop choice op =
+niceViewop : { choice : String, userResponse : String, correct : String } -> Input.OptionState -> Element Msg
+niceViewop { choice, userResponse, correct } op =
     let
         attrs =
-            [ width fill, padding 5, Border.rounded 10 ]
+            [ width fill, padding 5, Border.rounded 10, Border.solid, Border.color black ]
     in
     case op of
         Idle ->
@@ -387,4 +387,8 @@ niceViewop choice op =
             el (List.append [ Background.color (Element.rgb255 52 152 219) ] attrs) (text choice)
 
         Selected ->
-            el (List.append [ Background.color (Element.rgb255 241 196 15) ] attrs) (text choice)
+            if String.toUpper userResponse == String.toUpper correct then
+                el (List.append [ Background.color lightgreen ] attrs) (text choice)
+
+            else
+                el (List.append [ Background.color (Element.rgb255 241 196 15) ] attrs) (text choice)
