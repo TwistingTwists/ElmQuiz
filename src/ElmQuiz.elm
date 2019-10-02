@@ -63,6 +63,10 @@ pinkishsilver =
     Element.rgb255 240 228 255
 
 
+lime =
+    Element.rgb255 205 220 57
+
+
 
 -- MAIN
 
@@ -243,15 +247,15 @@ choicesDecoder =
 -- VIEW
 
 
-getUpdatedQuizViewList : Int -> Model -> List QuizQuestion
-getUpdatedQuizViewList pgNum model =
+getUpdatedQuizViewList : Model -> List QuizQuestion
+getUpdatedQuizViewList model =
     let
         totalPages =
             (toFloat (List.length model.quiz) / 10)
                 |> ceiling
 
         ( newQuizList, a ) =
-            List.splitAt (pgNum * 10) model.quiz
+            List.splitAt (model.pageNum * 10) model.quiz
     in
     newQuizList
 
@@ -269,22 +273,33 @@ view model =
 viewCombine : Model -> Element Msg
 viewCombine model =
     column [ spacing 50 ]
-        [ model |> getUpdatedQuizViewList model.pageNum |> decodedQuizList, wrappedRow [ alignRight, spacing 20 ] [ viewMorePlease model.pageNum, scoreView model ] ]
-
-
-viewMorePlease : Int -> Element Msg
-viewMorePlease pageNum =
-    Input.button
-        [ Background.color lightgreen
-        , Font.color black
-        , padding 10
-        , Border.rounded 10
-        , Element.focused
-            [ Background.color blue, Font.color yellow ]
+        [ model
+            |> getUpdatedQuizViewList
+            |> decodedQuizList
+        , wrappedRow [ alignRight, spacing 20 ]
+            [ viewMorePlease model.pageNum ((toFloat (List.length model.quiz) / 10) |> ceiling)
+            , scoreView model
+            ]
         ]
-        { onPress = Just <| LoadMore pageNum
-        , label = text "More Please"
-        }
+
+
+viewMorePlease : Int -> Int -> Element Msg
+viewMorePlease pageNum totalPages =
+    if pageNum < totalPages then
+        Input.button
+            [ Background.color lightgreen
+            , Font.color black
+            , padding 10
+            , Border.rounded 10
+            , Element.focused
+                [ Background.color blue, Font.color yellow ]
+            ]
+            { onPress = Just <| LoadMore pageNum
+            , label = text "More Please"
+            }
+
+    else
+        Element.el [ Background.color red, Font.color lime ] (text <| "You've reached the end of quiz")
 
 
 scoreView : Model -> Element Msg
