@@ -295,7 +295,7 @@ viewMorePlease pageNum totalPages =
                 [ Background.color blue, Font.color yellow ]
             ]
             { onPress = Just <| LoadMore pageNum
-            , label = text "More Please"
+            , label = text ("More Please LeftPages = " ++ String.fromInt (totalPages - pageNum))
             }
 
     else
