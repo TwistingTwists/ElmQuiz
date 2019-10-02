@@ -269,11 +269,11 @@ view model =
 viewCombine : Model -> Element Msg
 viewCombine model =
     column [ spacing 50 ]
-        [ model |> getUpdatedQuizViewList model.pageNum |> decodedQuizList, viewButtons model ]
+        [ model |> getUpdatedQuizViewList model.pageNum |> decodedQuizList, wrappedRow [ alignRight ] [ viewMorePlease model.pageNum ] ]
 
 
-viewButtons : Model -> Element Msg
-viewButtons model =
+viewMorePlease : Int -> Element Msg
+viewMorePlease pageNum =
     Input.button
         [ Background.color lightgreen
         , Font.color black
@@ -282,7 +282,7 @@ viewButtons model =
         , Element.focused
             [ Background.color blue, Font.color yellow ]
         ]
-        { onPress = Just <| LoadMore model.pageNum
+        { onPress = Just <| LoadMore pageNum
         , label = text "More Please"
         }
 
