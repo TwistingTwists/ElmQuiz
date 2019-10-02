@@ -371,6 +371,15 @@ questionsView q =
         ]
 
 
+setChoiceDefaultIfError : List String -> List String
+setChoiceDefaultIfError choices =
+    if List.length choices < 4 then
+        [ "A", "B", "C", "D" ]
+
+    else
+        choices
+
+
 radioQuiz : QuizQuestion -> Element Msg
 radioQuiz q =
     wrappedRow [ Background.color grey, width fill, centerY ]
@@ -381,7 +390,7 @@ radioQuiz q =
             , label = Input.labelHidden ("Question" ++ String.fromInt q.qid)
             , options =
                 -- List.map2 (\op ch -> Input.option op (text ch)) [ "A", "B", "C", "D" ] q.choices
-                List.map2 (\op ch -> Input.optionWith op (niceViewop { choice = ch, userResponse = q.userResponse, correct = q.correct })) [ "A", "B", "C", "D" ] q.choices
+                List.map2 (\op ch -> Input.optionWith op (niceViewop { choice = ch, userResponse = q.userResponse, correct = q.correct })) [ "A", "B", "C", "D" ] (setChoiceDefaultIfError <| q.choices)
 
             -- List.map2 (\op ch -> Input.option op (text ch)) [ A, B, C, D ] choices
             }
