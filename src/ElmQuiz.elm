@@ -1,7 +1,7 @@
 port module ElmQuiz exposing (Model, Msg(..), init, main, subscriptions, update, view)
 
 import Browser
-import Element exposing (Element, alignBottom, alignRight, alignTop, centerY, column, el, fill, padding, rgb255, row, spacing, text, width, wrappedRow)
+import Element exposing (Element, alignBottom, alignRight, alignTop, centerY, column, el, fill, height, padding, rgb255, row, spacing, text, width, wrappedRow)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
@@ -196,10 +196,10 @@ getJsonFile : Cmd Msg
 getJsonFile =
     Http.get
         { --   url = "./AugInsights.json"
-          url = "https://gist.githubusercontent.com/TwistingTwists/409437d7fc146d05f313e59da44535e6/raw/8a7179d0fb2fed5c73938ab43cc04fd5ca0eaaa0/AugInsights.json"
+          -- url = "https://gist.githubusercontent.com/TwistingTwists/409437d7fc146d05f313e59da44535e6/raw/8a7179d0fb2fed5c73938ab43cc04fd5ca0eaaa0/AugInsights.json"
+          --   url = "https://gist.githubusercontent.com/TwistingTwists/d1b0a7ec408e1ccfa511f1d11d4458d9/raw/c87c46a68a18a2c50fe9932bfc703cdcbc43d190/JulyInsights.json"
+          url = "https://gist.githubusercontent.com/TwistingTwists/d1b0a7ec408e1ccfa511f1d11d4458d9/raw/ce0b11428cbd308c9d6789b46213a34b6f4aeee5/JuneInsights.json"
 
-        --   url = "https://gist.githubusercontent.com/TwistingTwists/d1b0a7ec408e1ccfa511f1d11d4458d9/raw/c87c46a68a18a2c50fe9932bfc703cdcbc43d190/JulyInsights.json"
-        --   url = "https://gist.githubusercontent.com/TwistingTwists/d1b0a7ec408e1ccfa511f1d11d4458d9/raw/ce0b11428cbd308c9d6789b46213a34b6f4aeee5/JuneInsights.json"
         --   url = "http://192.168.0.104:8080/src/AugInsights.json"
         -- , headers = [ Http.header "Access-Control-Allow-Origin: nickname.github.io" ]
         --   url = "http://192.168.0.105:8080/src/quizzy.json"
@@ -327,9 +327,10 @@ setChoiceDefaultIfError choices =
 
 radioQuiz : QuizQuestion -> Element Msg
 radioQuiz q =
-    wrappedRow [ Background.color grey, width fill ]
+    wrappedRow [ Background.color grey ]
         [ Input.radio
-            [ padding 40, spacing 90, Font.size 30 ]
+            [ padding 30, spacing 90, Font.size 30, width fill ]
+            -- (fill |> Element.maximum 800) ]
             { onChange = UpdateUserChoice q.qid
             , selected = Just q.userResponse
             , label = Input.labelHidden ("Question" ++ String.fromInt q.qid)
@@ -346,7 +347,7 @@ niceViewop : { choice : String, userResponse : String, correct : String } -> Inp
 niceViewop { choice, userResponse, correct } op =
     let
         attrs =
-            [ width fill, spacing 20, padding 5, Border.rounded 10, Border.solid, Border.color black ]
+            [ width (fill |> Element.maximum 1000 |> Element.minimum 100), padding 5, Border.rounded 10, Border.solid, Border.color black ]
     in
     case op of
         Idle ->
