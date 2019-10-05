@@ -1,7 +1,8 @@
 port module ElmQuiz exposing (Model, Msg(..), init, main, subscriptions, update, view)
 
 import Browser
-import Element exposing (Element, alignBottom, alignRight, alignTop, centerY, column, el, fill, height, padding, rgb255, row, spacing, text, width, wrappedRow)
+import Colors exposing (..)
+import Element exposing (Element, alignBottom, alignRight, alignTop, centerX, centerY, column, el, fill, height, padding, rgb255, row, spacing, text, width, wrappedRow)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
@@ -12,6 +13,7 @@ import Http
 import Json.Decode as D exposing (Decoder)
 import Json.Decode.Pipeline exposing (hardcoded, optional, required)
 import List.Extra as List
+import QuizMonth as QM
 
 
 
@@ -25,49 +27,6 @@ import List.Extra as List
        { jsonPath = "", quiz = input_quiz }
 
 -}
-
-
-yellow =
-    Element.rgb255 255 247 25
-
-
-grey =
-    Element.rgb255 232 232 232
-
-
-black =
-    Element.rgb255 0 0 0
-
-
-lightgreen =
-    Element.rgb255 30 255 43
-
-
-purple =
-    Element.rgb255 180 22 255
-
-
-blue =
-    Element.rgb255 72 114 255
-
-
-red =
-    Element.rgb 0.8 0 0
-
-
-silver =
-    Element.rgb255 189 189 195
-
-
-pinkishsilver =
-    Element.rgb255 240 228 255
-
-
-lime =
-    Element.rgb255 205 220 57
-
-
-
 -- MAIN
 
 
@@ -124,11 +83,6 @@ type alias QuizQuestion =
     }
 
 
-init : () -> ( Model, Cmd Msg )
-init _ =
-    ( defaultModel, getJsonFile )
-
-
 
 -- DEFAULTS
 
@@ -142,6 +96,12 @@ defaultModel =
     { jsonPath = "", quiz = defaultQuiz, userScore = 0.0, pageNum = 1 }
 
 
+init : () -> ( Model, Cmd Msg )
+init _ =
+    -- ( defaultModel, getJsonFile )
+    ( defaultModel, Cmd.none )
+
+
 
 -- UPDATE
 
@@ -150,13 +110,12 @@ type Msg
     = ReceivedJson (Result Http.Error (List QuizQuestion)) -- if you received json from server
     | UpdateUserChoice Int String
     | LoadMore Int
+    | ChosenQuizMonth String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        -- JsonPath newPath ->
-        --     ( { model | jsonPath = newPath }, getJsonFile )
         ReceivedJson result ->
             case result of
                 Ok quizQuestionList ->
@@ -172,6 +131,9 @@ update msg model =
 
         LoadMore pgNum ->
             ( { model | pageNum = pgNum + 1 }, Cmd.none )
+
+        ChosenQuizMonth mahina ->
+            ( model, getJsonFromUrl (mahina |> QM.month2url) )
 
 
 updUserScore : Model -> Model
@@ -190,6 +152,14 @@ updUserChoice id ans model =
                 quizQuestion
     in
     { model | quiz = List.map updateUserAns model.quiz }
+
+
+getJsonFromUrl : String -> Cmd Msg
+getJsonFromUrl urlReceived =
+    Http.get
+        { url = urlReceived
+        , expect = Http.expectJson ReceivedJson quizListDecoder
+        }
 
 
 getJsonFile : Cmd Msg
@@ -274,32 +244,73 @@ view model =
 
 viewCombine : Model -> Element Msg
 viewCombine model =
-    Element.textColumn [ padding 20, width fill ]
+    column []
+        [ viewHeader
+        , viewQuiz model
+        ]
+
+
+viewQuiz : Model -> Element Msg
+viewQuiz model =
+    Element.textColumn
+        [ padding 20, width fill ]
         [ model
             |> getUpdatedQuizViewList
             |> decodedQuizList
         , Element.textColumn [ alignRight, alignBottom ]
             [ viewMorePlease model.pageNum ((toFloat (List.length model.quiz) / 5) |> ceiling)
-
-            -- , scoreView model
+            , scoreView model
             ]
         ]
 
 
+viewHeader : Element Msg
+viewHeader =
+    Element.row [ Element.spaceEvenly, spacing 50, centerX, centerY ]
+        [ viewMonthButton "June"
+        , viewMonthButton "July"
+        , viewMonthButton "August"
+        ]
+
+
+viewMonthButton : String -> Element Msg
+viewMonthButton s =
+    -- TODO : can implement QUiz button as Radio : ie. choose one of the quiz options ONLY, but not needed since model.quiz can have only one quiz at a time.
+    -- wrappedRow [ Background.color pinkishsilver ]
+    --     [ Input.radio
+    --         [ padding 30, spacing 90, Font.size 30, width fill ]
+    --         -- (fill |> Element.maximum 800) ]
+    --         { onChange = ChosenQuizMonth s
+    --         , selected = Just q.userResponse
+    --         , label = Input.labelHidden ("Question" ++ String.fromInt q.qid)
+    --         , options =
+    --             -- List.map2 (\op ch -> Input.option op (text ch)) [ "A", "B", "C", "D" ] q.choices
+    --             List.map2 (\op ch -> Input.optionWith op (niceViewop { choice = ch, userResponse = q.userResponse, correct = q.correct })) [ "A", "B", "C", "D" ] (setChoiceDefaultIfError <| q.choices)
+    --         -- List.map2 (\op ch -> Input.option op (text ch)) [ A, B, C, D ] choices
+    --         }
+    --     ]
+    Input.button
+        [ Background.color yellow
+        , Font.color black
+        , Font.size 30
+        , padding 20
+        , spacing 10
+        , Border.rounded 20
+        , Element.focused
+            [ Background.color pinkishsilver, Font.color blue ]
+        ]
+        { onPress = Just <| ChosenQuizMonth s
+        , label = text ("Quiz from Month " ++ s)
+        }
+
+
 decodedQuizList : List QuizQuestion -> Element Msg
 decodedQuizList modelQuizList =
-    -- wrappedRow
     Element.textColumn [ width fill, Element.centerX ]
-        [ --  Element.explain Debug.todo,
-          -- text <| Debug.toString modelQuizList
-          -- (viewQuizList input_quiz)
-          -- (viewQuizList modelQuizList)
-          Element.textColumn
+        [ Element.textColumn
             [ padding 90
             , spacing 50
             ]
-            -- (List.map radioQuiz modelQuizList)
-            -- (List.map2 questionsView radioQuiz modelQuizList)
             (List.map (\x -> Element.wrappedRow [ Element.spaceEvenly, padding 5 ] [ questionsView x, radioQuiz x ]) modelQuizList)
         ]
 
@@ -327,18 +338,15 @@ setChoiceDefaultIfError choices =
 
 radioQuiz : QuizQuestion -> Element Msg
 radioQuiz q =
-    wrappedRow [ Background.color grey ]
+    wrappedRow [ Background.color grey, height fill ]
         [ Input.radio
-            [ padding 30, spacing 90, Font.size 30, width fill ]
-            -- (fill |> Element.maximum 800) ]
+            [ padding 10, spacing 90, Font.size 30, width fill ]
             { onChange = UpdateUserChoice q.qid
             , selected = Just q.userResponse
             , label = Input.labelHidden ("Question" ++ String.fromInt q.qid)
             , options =
                 -- List.map2 (\op ch -> Input.option op (text ch)) [ "A", "B", "C", "D" ] q.choices
                 List.map2 (\op ch -> Input.optionWith op (niceViewop { choice = ch, userResponse = q.userResponse, correct = q.correct })) [ "A", "B", "C", "D" ] (setChoiceDefaultIfError <| q.choices)
-
-            -- List.map2 (\op ch -> Input.option op (text ch)) [ A, B, C, D ] choices
             }
         ]
 
@@ -347,7 +355,7 @@ niceViewop : { choice : String, userResponse : String, correct : String } -> Inp
 niceViewop { choice, userResponse, correct } op =
     let
         attrs =
-            [ width (fill |> Element.maximum 1000 |> Element.minimum 100), padding 5, Border.rounded 10, Border.solid, Border.color black ]
+            [ width (fill |> Element.maximum 1000 |> Element.minimum 100), padding 10 ]
     in
     case op of
         Idle ->
@@ -386,12 +394,12 @@ viewMorePlease pageNum totalPages =
 
 scoreView : Model -> Element Msg
 scoreView model =
-    Element.el [ Element.below (text <| String.slice 0 6 <| String.fromFloat <| model.userScore), alignTop, alignRight, Font.bold, Font.color red ]
+    Element.el [ Element.below (text <| String.slice 0 6 <| String.fromFloat <| model.userScore), alignTop, alignRight, Font.bold, Font.size 30, Font.color red ]
         (text <| "Score is ")
 
 
 
--- (text <| String.fromFloat <| countScore model.quiz)
+-- SCORING SCHEME
 
 
 countScore : List QuizQuestion -> Float
@@ -408,10 +416,24 @@ countScoreHelper quiz scoreSoFar =
         head :: tail ->
             let
                 val =
-                    if String.toUpper head.userResponse == String.toUpper head.correct then
-                        scoreSoFar + 2.0
-
-                    else
-                        scoreSoFar - (2 / 3)
+                    getMeScore ( head.userResponse, head.correct ) scoreSoFar
             in
             countScoreHelper tail val
+
+
+getMeScore : ( String, String ) -> Float -> Float
+getMeScore ( a, correct ) score =
+    if String.toUpper a == "Z" then
+        score
+
+    else
+        getMeScoreHelper ( a, correct ) score
+
+
+getMeScoreHelper : ( String, String ) -> Float -> Float
+getMeScoreHelper ( a, correct ) scoreSoFar =
+    if String.toUpper a == String.toUpper correct then
+        scoreSoFar + 2.0
+
+    else
+        scoreSoFar - (2 / 3)
