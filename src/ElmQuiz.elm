@@ -198,6 +198,8 @@ getJsonFile =
         { --   url = "./AugInsights.json"
           url = "https://gist.githubusercontent.com/TwistingTwists/409437d7fc146d05f313e59da44535e6/raw/8a7179d0fb2fed5c73938ab43cc04fd5ca0eaaa0/AugInsights.json"
 
+        --   url = "https://gist.githubusercontent.com/TwistingTwists/d1b0a7ec408e1ccfa511f1d11d4458d9/raw/c87c46a68a18a2c50fe9932bfc703cdcbc43d190/JulyInsights.json"
+        --   url = "https://gist.githubusercontent.com/TwistingTwists/d1b0a7ec408e1ccfa511f1d11d4458d9/raw/ce0b11428cbd308c9d6789b46213a34b6f4aeee5/JuneInsights.json"
         --   url = "http://192.168.0.104:8080/src/AugInsights.json"
         -- , headers = [ Http.header "Access-Control-Allow-Origin: nickname.github.io" ]
         --   url = "http://192.168.0.105:8080/src/quizzy.json"
@@ -251,18 +253,18 @@ getUpdatedQuizViewList : Model -> List QuizQuestion
 getUpdatedQuizViewList model =
     let
         totalPages =
-            (toFloat (List.length model.quiz) / 10)
+            (toFloat (List.length model.quiz) / 5)
                 |> ceiling
 
         ( newQuizList, a ) =
-            List.splitAt (model.pageNum * 10) model.quiz
+            List.splitAt (model.pageNum * 5) model.quiz
     in
     newQuizList
 
 
 view : Model -> Html Msg
 view model =
-    Element.layout [ padding 50, spacing 100 ]
+    Element.layout [ padding 10, spacing 30 ]
         (viewCombine model)
 
 
@@ -272,34 +274,113 @@ view model =
 
 viewCombine : Model -> Element Msg
 viewCombine model =
-    column [ spacing 50 ]
+    Element.textColumn [ padding 20, width fill ]
         [ model
             |> getUpdatedQuizViewList
             |> decodedQuizList
-        , wrappedRow [ alignRight, spacing 20 ]
-            [ viewMorePlease model.pageNum ((toFloat (List.length model.quiz) / 10) |> ceiling)
-            , scoreView model
+        , Element.textColumn [ alignRight, alignBottom ]
+            [ viewMorePlease model.pageNum ((toFloat (List.length model.quiz) / 5) |> ceiling)
+
+            -- , scoreView model
             ]
         ]
+
+
+decodedQuizList : List QuizQuestion -> Element Msg
+decodedQuizList modelQuizList =
+    -- wrappedRow
+    Element.textColumn [ width fill, Element.centerX ]
+        [ --  Element.explain Debug.todo,
+          -- text <| Debug.toString modelQuizList
+          -- (viewQuizList input_quiz)
+          -- (viewQuizList modelQuizList)
+          Element.textColumn
+            [ padding 90
+            , spacing 50
+            ]
+            -- (List.map radioQuiz modelQuizList)
+            -- (List.map2 questionsView radioQuiz modelQuizList)
+            (List.map (\x -> Element.wrappedRow [ Element.spaceEvenly, padding 5 ] [ questionsView x, radioQuiz x ]) modelQuizList)
+        ]
+
+
+questionsView : QuizQuestion -> Element Msg
+questionsView q =
+    Element.textColumn
+        -- [ Font.justify
+        [ width fill
+        , Font.size 38
+        , padding 5
+        , Element.onLeft (Element.el [ Font.color blue, Font.size 50, Font.bold ] (text <| "(" ++ String.fromInt q.qid ++ ")"))
+        ]
+        [ text <| q.question ]
+
+
+setChoiceDefaultIfError : List String -> List String
+setChoiceDefaultIfError choices =
+    if List.length choices < 4 then
+        [ "A", "B", "C", "D" ]
+
+    else
+        choices
+
+
+radioQuiz : QuizQuestion -> Element Msg
+radioQuiz q =
+    wrappedRow [ Background.color grey, width fill ]
+        [ Input.radio
+            [ padding 40, spacing 90, Font.size 30 ]
+            { onChange = UpdateUserChoice q.qid
+            , selected = Just q.userResponse
+            , label = Input.labelHidden ("Question" ++ String.fromInt q.qid)
+            , options =
+                -- List.map2 (\op ch -> Input.option op (text ch)) [ "A", "B", "C", "D" ] q.choices
+                List.map2 (\op ch -> Input.optionWith op (niceViewop { choice = ch, userResponse = q.userResponse, correct = q.correct })) [ "A", "B", "C", "D" ] (setChoiceDefaultIfError <| q.choices)
+
+            -- List.map2 (\op ch -> Input.option op (text ch)) [ A, B, C, D ] choices
+            }
+        ]
+
+
+niceViewop : { choice : String, userResponse : String, correct : String } -> Input.OptionState -> Element Msg
+niceViewop { choice, userResponse, correct } op =
+    let
+        attrs =
+            [ width fill, spacing 20, padding 5, Border.rounded 10, Border.solid, Border.color black ]
+    in
+    case op of
+        Idle ->
+            el (List.append [ Background.color (Element.rgb255 236 242 240) ] attrs) (text choice)
+
+        Focused ->
+            el (List.append [ Background.color (Element.rgb255 52 152 219) ] attrs) (text choice)
+
+        Selected ->
+            if String.toUpper userResponse == String.toUpper correct then
+                el (List.append [ Background.color lightgreen ] attrs) (text choice)
+
+            else
+                el (List.append [ Background.color (Element.rgb255 241 196 15) ] attrs) (text choice)
 
 
 viewMorePlease : Int -> Int -> Element Msg
 viewMorePlease pageNum totalPages =
     if pageNum < totalPages then
         Input.button
-            [ Background.color lightgreen
+            [ Background.color yellow
             , Font.color black
-            , padding 10
-            , Border.rounded 10
+            , padding 20
+            , spacing 10
+            , Border.rounded 20
             , Element.focused
-                [ Background.color blue, Font.color yellow ]
+                [ Background.color lightgreen, Font.color blue ]
             ]
             { onPress = Just <| LoadMore pageNum
             , label = text ("More Please LeftPages = " ++ String.fromInt (totalPages - pageNum))
             }
 
     else
-        Element.el [ Background.color red, Font.color lime ] (text <| "You've reached the end of quiz")
+        Element.el [ Background.color black, Font.color yellow, Font.size 50 ] (text <| "You've reached the end of quiz")
 
 
 scoreView : Model -> Element Msg
@@ -333,86 +414,3 @@ countScoreHelper quiz scoreSoFar =
                         scoreSoFar - (2 / 3)
             in
             countScoreHelper tail val
-
-
-decodedQuizList : List QuizQuestion -> Element Msg
-decodedQuizList modelQuizList =
-    wrappedRow [ width fill, Element.centerX ]
-        [ --  Element.explain Debug.todo,
-          -- text <| Debug.toString modelQuizList
-          -- (viewQuizList input_quiz)
-          -- (viewQuizList modelQuizList)
-          column
-            [ Font.color (Element.rgba255 12 6 14 1)
-            , padding 90
-            , spacing 30
-            ]
-            -- (List.map radioQuiz modelQuizList)
-            -- (List.map2 questionsView radioQuiz modelQuizList)
-            (List.map (\x -> column [ Element.spaceEvenly ] [ questionsView x, radioQuiz x ]) modelQuizList)
-        ]
-
-
-questionsView : QuizQuestion -> Element Msg
-questionsView q =
-    -- wrappedRow [ Background.color grey, width fill, centerY, padding 10, Border.solid]
-    --     [ text <| q.question ]
-    Element.textColumn [ padding 10 ]
-        [ Element.el
-            [ Element.spaceEvenly
-            , Font.justify
-            , Font.size 38
-            , padding 20
-            , width fill
-            ]
-            (text <| q.question)
-
-        -- , el [ Element.alignLeft ] Element.none
-        ]
-
-
-setChoiceDefaultIfError : List String -> List String
-setChoiceDefaultIfError choices =
-    if List.length choices < 4 then
-        [ "A", "B", "C", "D" ]
-
-    else
-        choices
-
-
-radioQuiz : QuizQuestion -> Element Msg
-radioQuiz q =
-    wrappedRow [ Background.color grey, width fill, centerY ]
-        [ Input.radio
-            [ padding 40, spacing 50, Font.size 30 ]
-            { onChange = UpdateUserChoice q.qid
-            , selected = Just q.userResponse
-            , label = Input.labelHidden ("Question" ++ String.fromInt q.qid)
-            , options =
-                -- List.map2 (\op ch -> Input.option op (text ch)) [ "A", "B", "C", "D" ] q.choices
-                List.map2 (\op ch -> Input.optionWith op (niceViewop { choice = ch, userResponse = q.userResponse, correct = q.correct })) [ "A", "B", "C", "D" ] (setChoiceDefaultIfError <| q.choices)
-
-            -- List.map2 (\op ch -> Input.option op (text ch)) [ A, B, C, D ] choices
-            }
-        ]
-
-
-niceViewop : { choice : String, userResponse : String, correct : String } -> Input.OptionState -> Element Msg
-niceViewop { choice, userResponse, correct } op =
-    let
-        attrs =
-            [ width fill, padding 5, Border.rounded 10, Border.solid, Border.color black ]
-    in
-    case op of
-        Idle ->
-            el (List.append [ Background.color (Element.rgb255 236 242 240) ] attrs) (text choice)
-
-        Focused ->
-            el (List.append [ Background.color (Element.rgb255 52 152 219) ] attrs) (text choice)
-
-        Selected ->
-            if String.toUpper userResponse == String.toUpper correct then
-                el (List.append [ Background.color lightgreen ] attrs) (text choice)
-
-            else
-                el (List.append [ Background.color (Element.rgb255 241 196 15) ] attrs) (text choice)
